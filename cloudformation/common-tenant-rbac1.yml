@@ -1,0 +1,185 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  organisation-scp-pipeline Cloudformation
+Parameters:
+  Environment:
+    Type: String
+  TenantOrganisationIDs:
+    Type: CommaDelimitedList
+    Description: List of OUs
+Resources:
+  Policy:
+    Type: AWS::Organizations::Policy
+    Properties:
+      Type: SERVICE_CONTROL_POLICY
+      Name: !Sub ${Environment}-common-tenant-rbac1
+      TargetIds: !Ref TenantOrganisationIDs
+      Content:
+        Version: '2012-10-17'
+        Statement:
+        - Condition:
+            ArnLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/tenant-custom-*
+          Action:
+          - cloudformation:Activate*
+          - cloudformation:CreateStackInstances
+          - cloudformation:CreateStackSet
+          - cloudformation:CreateUploadBucket
+          - cloudformation:Deactivate*
+          - cloudformation:DeleteStackInstances
+          - cloudformation:DeleteStackSet
+          - cloudformation:DeregisterType
+          - cloudformation:ImportStacksToStackSet
+          - cloudformation:PublishType
+          - cloudformation:RecordHandlerProgress
+          - cloudformation:RegisterPublisher
+          - cloudformation:RegisterType
+          - cloudformation:SetTypeConfiguration
+          - cloudformation:SetTypeDefaultVersion
+          - cloudformation:StopStackSetOperation
+          - cloudformation:TestType
+          - cloudformation:UpdateStackInstances
+          - cloudformation:UpdateStackSet
+          - ec2:Accept*
+          - ec2:AdvertiseByoipCidr
+          - ec2:AllocateAddress
+          - ec2:AllocateIpamPoolCidr
+          - ec2:ApplySecurityGroupsToClientVpnTargetNetwork
+          - ec2:AssignIpv6Addresses
+          - ec2:AssignPrivateNatGatewayAddress
+          - ec2:AssociateClientVpnTargetNetwork
+          - ec2:AssociateIpamResourceDiscovery
+          - ec2:AssociateNatGatewayAddress
+          - ec2:AssociateRouteTable
+          - ec2:AssociateSubnetCidrBlock
+          - ec2:AssociateTransitGateway*
+          - ec2:AssociateTrunkInterface
+          - ec2:AssociateVerifiedAccessInstanceWebAcl
+          - ec2:AssociateVpcCidrBlock
+          - ec2:AttachClassicLinkVpc
+          - ec2:AttachInternetGateway
+          - ec2:AttachVerifiedAccessTrustProvider
+          - ec2:AttachVpnGateway
+          - ec2:Authorize*
+          - ec2:CancelReservedInstancesListing
+          - ec2:CopyFpgaImage
+          - ec2:CreateCarrierGateway
+          - ec2:CreateClientVpnEndpoint
+          - ec2:CreateClientVpnRoute
+          - ec2:CreateCoip*
+          - ec2:CreateCustomerGateway
+          - ec2:CreateDefault*
+          - ec2:CreateEgressOnlyInternetGateway
+          - ec2:CreateInternetGateway
+          - ec2:CreateIpam*
+          - ec2:CreateLocalGatewayRoute*
+          - ec2:CreateNatGateway
+          - ec2:CreateNetworkAcl*
+          - ec2:CreateNetworkInterfacePermission
+          - ec2:CreatePublicIpv4Pool
+          - ec2:CreateReservedInstancesListing
+          - ec2:CreateRoute*
+          - ec2:CreateSecurityGroup
+          - ec2:CreateSubnet
+          - ec2:CreateTrafficMirror*
+          - ec2:CreateTransitGateway*
+          - ec2:CreateVerifiedAccess*
+          - ec2:CreateVpc*
+          - ec2:CreateVpn*
+          - ec2:DeleteCarrierGateway
+          - ec2:DeleteClientVpn*
+          - ec2:DeleteCoip*
+          - ec2:DeleteCustomerGateway
+          - ec2:DeleteEgressOnlyInternetGateway
+          - ec2:DeleteInternetGateway
+          - ec2:DeleteIpam*
+          - ec2:DeleteLocalGatewayRoute*
+          - ec2:DeleteNatGateway
+          - ec2:DeleteNetworkAcl*
+          - ec2:DeleteNetworkInterfacePermission
+          - ec2:DeletePublicIpv4Pool
+          - ec2:DeleteQueuedReservedInstances
+          - ec2:DeleteResourcePolicy
+          - ec2:DeleteRoute*
+          - ec2:DeleteSecurityGroup
+          - ec2:DeleteSubnet
+          - ec2:DeleteTraffic*
+          - ec2:DeleteTransitGateway*
+          - ec2:DeleteVerified*
+          - ec2:DeleteVpc*
+          - ec2:DeleteVpn*
+          - ec2:Deprovision*
+          - ec2:DeregisterTransitGateway*
+          - ec2:DetachClassicLinkVpc
+          - ec2:DetachInternetGateway
+          - ec2:DetachVerifiedAccessTrustProvider
+          - ec2:DetachVpnGateway
+          - ec2:DisableAddressTransfer
+          - ec2:DisableEbsEncryptionByDefault
+          - ec2:DisableIpamOrganizationAdminAccount
+          - ec2:DisableSerialConsoleAccess
+          - ec2:DisableTransitGatewayRouteTablePropagation
+          - ec2:DisableVgwRoutePropagation
+          - ec2:DisableVpcClassicLink*
+          - ec2:DisassociateClientVpnTargetNetwork
+          - ec2:DisassociateIpamResourceDiscovery
+          - ec2:DisassociateNatGatewayAddress
+          - ec2:DisassociateRouteTable
+          - ec2:DisassociateSubnetCidrBlock
+          - ec2:DisassociateTransitGateway*
+          - ec2:DisassociateTrunkInterface
+          - ec2:DisassociateVerifiedAccessInstanceWebAcl
+          - ec2:DisassociateVpcCidrBlock
+          - ec2:EnableAddressTransfer
+          - ec2:EnableIpamOrganizationAdminAccount
+          - ec2:EnableReachabilityAnalyzerOrganizationSharing
+          - ec2:EnableSerialConsoleAccess
+          - ec2:EnableTransitGatewayRouteTablePropagation
+          - ec2:EnableVgwRoutePropagation
+          - ec2:EnableVpcClassicLink*
+          - ec2:Export*
+          - ec2:ImportByoipCidrToIpam
+          - ec2:ImportClientVpnClientCertificateRevocationList
+          - ec2:ImportKeyPair
+          - ec2:ModifyAddressAttribute
+          - ec2:ModifyAvailabilityZoneGroup
+          - ec2:ModifyClientVpnEndpoint
+          - ec2:ModifyIpam*
+          - ec2:ModifyLocalGatewayRoute
+          - ec2:ModifyPrivateDnsNameOptions
+          - ec2:ModifyReservedInstances
+          - ec2:ModifySecurityGroupRules
+          - ec2:ModifySubnetAttribute
+          - ec2:ModifyTraffic*
+          - ec2:ModifyTransitGateway*
+          - ec2:ModifyVerified*
+          - ec2:ModifyVpcAttribute
+          - ec2:ModifyVpcEndpoint*
+          - ec2:ModifyVpcPeeringConnectionOptions
+          - ec2:ModifyVpn*
+          - ec2:Move*
+          - ec2:Provision*
+          - ec2:Purchase*
+          - ec2:PutResourcePolicy
+          - ec2:RegisterTransitGatewayMulticastGroup*
+          - ec2:Reject*
+          - ec2:ReleaseAddress
+          - ec2:ReleaseIpamPoolAllocation
+          - ec2:ReplaceNetwork*
+          - ec2:ReplaceRoute*
+          - ec2:ReplaceTransitGatewayRoute
+          - ec2:ReplaceVpnTunnel
+          - ec2:ResetAddressAttribute
+          - ec2:RestoreAddressToClassic
+          - ec2:Revoke*
+          - ec2:Search*
+          - ec2:StartVpcEndpointServicePrivateDnsVerification
+          - ec2:TerminateClientVpnConnections
+          - ec2:UnassignIpv6Addresses
+          - ec2:UnassignPrivateNatGatewayAddress
+          - ec2:Update*
+          - ec2:Withdraw*
+          Resource: "*"
+          Effect: Deny

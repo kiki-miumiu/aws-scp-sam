@@ -1,0 +1,183 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  organisation-scp-pipeline Cloudformation
+Parameters:
+  Environment:
+    Type: String
+  TenantOrganisationIDs:
+    Type: CommaDelimitedList
+    Description: List of OUs
+Resources:
+  Policy:
+    Type: AWS::Organizations::Policy
+    Properties:
+      Type: SERVICE_CONTROL_POLICY
+      Name: !Sub ${Environment}-common-tenant-rbac2
+      TargetIds: !Ref TenantOrganisationIDs
+      Content:
+        Version: '2012-10-17'
+        Statement:
+        - Condition:
+            ArnLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/tenant-custom-*
+          Action:
+          - acm:ExportCertificate
+          - acm:RenewCertificate
+          - acm:RequestCertificate
+          - cloudtrail:CreateChannel
+          - cloudtrail:DeleteChannel
+          - cloudtrail:DeleteTrail
+          - cloudtrail:DeregisterOrganizationDelegatedAdmin
+          - cloudtrail:GetChannel
+          - cloudtrail:ListChannels
+          - cloudtrail:RegisterOrganizationDelegatedAdmin
+          - cloudtrail:StopLogging
+          - cloudtrail:UpdateChannel
+          - cloudwatch:Link
+          - codebuild:UpdateProjectVisibility
+          - config:DeleteConfigRule
+          - config:DeleteConfigurationRecorder
+          - config:DeleteDeliveryChannel
+          - config:DeleteOrganization*
+          - config:DescribeOrganization*
+          - config:GetOrganization*
+          - config:PutOrganization*
+          - config:StopConfigurationRecorder
+          - dynamodb:CreateGlobalTable
+          - dynamodb:CreateTableReplica
+          - dynamodb:DeleteTableReplica
+          - dynamodb:UpdateContributorInsights
+          - dynamodb:UpdateGlobalTable
+          - dynamodb:UpdateGlobalTableSettings
+          - dynamodb:UpdateGlobalTableVersion
+          - dynamodb:UpdateTableReplicaAutoScaling
+          - eks:CreateAddon
+          - eks:CreateFargateProfile
+          - eks:RegisterCluster
+          - eks:UpdateClusterConfig
+          - elasticfilesystem:ClientRootAccess
+          - elasticfilesystem:CreateReplicationConfiguration
+          - elasticfilesystem:DeleteReplicationConfiguration
+          - elasticloadbalancing:DisableAvailabilityZonesForLoadBalancer
+          - elasticloadbalancing:EnableAvailabilityZonesForLoadBalancer
+          - events:ActivateEventSource
+          - events:CreateApiDestination
+          - events:CreateConnection
+          - events:CreateEndpoint
+          - events:CreatePartnerEventSource
+          - events:DeactivateEventSource
+          - events:DeauthorizeConnection
+          - events:DeleteApiDestination
+          - events:DeleteConnection
+          - events:DeleteEndpoint
+          - events:DeletePartnerEventSource
+          - events:InvokeApiDestination
+          - events:ListApiDestinations
+          - events:ListConnections
+          - events:ListEndpoints
+          - events:ListEventSources
+          - events:ListPartnerEventSourceAccounts
+          - events:ListPartnerEventSources
+          - events:PutPartnerEvents
+          - events:PutPermission
+          - events:RemovePermission
+          - events:UpdateApiDestination
+          - events:UpdateConnection
+          - events:UpdateEndpoint
+          - health:DisableHealthServiceAccessForOrganization
+          - health:EnableHealthServiceAccessForOrganization
+          - iam:*
+          - kms:ConnectCustomKeyStore
+          - kms:CreateCustomKeyStore
+          - kms:DeleteCustomKeyStore
+          - kms:DisconnectCustomKeyStore
+          - kms:ReplicateKey
+          - kms:UpdateCustomKeyStore
+          - lambda:AddLayerVersionPermission
+          - lambda:CreateFunctionUrlConfig
+          - lambda:DeleteFunctionUrlConfig
+          - lambda:GetFunctionUrlConfig
+          - lambda:InvokeFunctionUrl
+          - lambda:ListFunctionUrlConfigs
+          - lambda:RemoveLayerVersionPermission
+          - lambda:UpdateFunctionUrlConfig
+          - logs:CancelExportTask
+          - logs:CreateExportTask
+          - logs:DeleteDestination
+          - logs:DeleteSubscriptionFilter
+          - logs:Link
+          - logs:PutDestination
+          - logs:PutDestinationPolicy
+          - rds:CreateGlobalCluster
+          - rds:CrossRegionCommunication
+          - rds:DeleteGlobalCluster
+          - rds:FailoverGlobalCluster
+          - rds:ModifyGlobalCluster
+          - rds:PurchaseReservedDBInstancesOffering
+          - rds:RemoveFromGlobalCluster
+          - route53:ActivateKeySigningKey
+          - route53:CreateKeySigningKey
+          - route53:CreateVPCAssociationAuthorization
+          - route53:DeactivateKeySigningKey
+          - route53:DeleteKeySigningKey
+          - route53:DeleteVPCAssociationAuthorization
+          - route53:DisableHostedZoneDNSSEC
+          - route53:EnableHostedZoneDNSSEC
+          - s3:CreateAccessPoint
+          - s3:CreateAccessPointForObjectLambda
+          - s3:CreateMultiRegionAccessPoint
+          - s3:DeleteAccessPoint
+          - s3:DeleteAccessPointForObjectLambda
+          - s3:DeleteAccessPointPolicy
+          - s3:DeleteAccessPointPolicyForObjectLambda
+          - s3:DeleteMultiRegionAccessPoint
+          - s3:GetMultiRegionAccessPoint
+          - s3:GetMultiRegionAccessPointPolicy
+          - s3:GetMultiRegionAccessPointPolicyStatus
+          - s3:GetMultiRegionAccessPointRoutes
+          - s3:ListAccessPoints
+          - s3:ListAccessPointsForObjectLambda
+          - s3:ListMultiRegionAccessPoints
+          - s3:ObjectOwnerOverrideToBucketOwner
+          - s3:PutAccessPointConfigurationForObjectLambda
+          - s3:PutAccessPointPolicy
+          - s3:PutAccessPointPolicyForObjectLambda
+          - s3:PutAccessPointPublicAccessBlock
+          - s3:PutAccountPublicAccessBlock
+          - s3:PutBucketAcl
+          - s3:PutMultiRegionAccessPointPolicy
+          - s3:SubmitMultiRegionAccessPointRoutes
+          - secretsmanager:RemoveRegionsFromReplication
+          - secretsmanager:ReplicateSecretToRegions
+          - secretsmanager:StopReplicationToReplica
+          - secretsmanager:UpdateSecretVersionStage
+          - sqs:AddPermission
+          - sqs:RemovePermission
+          - ssm:CreateActivation
+          - ssm:DeleteActivation
+          - ssm:DeregisterManagedInstance
+          - ssm:ModifyDocumentPermission
+          - sts:AssumeRole
+          - sts:AssumeRoleWithSAML
+          - sts:AssumeRoleWithWebIdentity
+          - sts:GetAccessKeyInfo
+          - sts:GetFederationToken
+          - sts:GetServiceBearerToken
+          - sts:GetSessionToken
+          - sts:SetSourceIdentity
+          - tag:DescribeReportCreation
+          - tag:GetComplianceSummary
+          - tag:StartReportCreation
+          - trustedadvisor:DeleteNotificationConfigurationForDelegatedAdmin
+          - trustedadvisor:DescribeOrganization*
+          - trustedadvisor:DescribeReports
+          - trustedadvisor:DescribeServiceMetadata
+          - trustedadvisor:GenerateReport
+          - trustedadvisor:ListAccountsForParent
+          - trustedadvisor:ListOrganizationalUnitsForParent
+          - trustedadvisor:ListRoots
+          - trustedadvisor:SetOrganizationAccess
+          Resource: "*"
+          Effect: Deny

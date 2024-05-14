@@ -1,1 +1,24 @@
 version = 0.1
+
+[cns-pv.deploy.parameters]
+stack_name = "cns-aws-scp-cns-pv"
+s3_bucket = "cns-aws-scp-517767640990"
+s3_prefix = "cns-aws-scp-cns-pv"
+region = "ap-southeast-2"
+confirm_changeset = false
+capabilities = "CAPABILITY_IAM"
+disable_rollback = false
+parameter_overrides = "Environment=\"cns-pv\" OrganisationIDs=\"ou-jax6-lhjk2hyh\" TenantOrganisationIDs=\"ou-jax6-pyfdew62,ou-jax6-w633wdu7\" RootID=\"NotInUse\""
+image_repositories = []
+
+[canary-pv.deploy.parameters]
+stack_name = "cns-aws-scp-canary-pv"
+s3_bucket = "cns-aws-scp-517767640990"
+s3_prefix = "cns-aws-scp-canary-pv"
+region = "ap-southeast-2"
+confirm_changeset = false
+capabilities = "CAPABILITY_IAM"
+disable_rollback = true
+parameter_overrides = "Environment=\"canary-pv\" OrganisationIDs=\"ou-jax6-w64p79s7,ou-jax6-lhjk2hyh\" TenantOrganisationIDs=\"ou-jax6-2rnxh3f0,ou-jax6-y7tzhj05,ou-jax6-w633wdu7,ou-jax6-pyfdew62\" RootID=\"NotInUse\" ExtraWhitelist=\",ssm-guiconnect:*\""
+image_repositories = []
+

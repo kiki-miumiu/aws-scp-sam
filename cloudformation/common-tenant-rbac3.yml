@@ -1,0 +1,146 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  organisation-scp-pipeline Cloudformation
+Parameters:
+  Environment:
+    Type: String
+  TenantOrganisationIDs:
+    Type: CommaDelimitedList
+    Description: List of OUs
+Resources:
+  Policy:
+    Type: AWS::Organizations::Policy
+    Properties:
+      Type: SERVICE_CONTROL_POLICY
+      Name: !Sub ${Environment}-common-tenant-rbac3
+      TargetIds: !Ref TenantOrganisationIDs
+      Content:
+        Version: '2012-10-17'
+        Statement:
+        - Condition:
+            ArnLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/tenant-custom-*
+            StringNotEquals:
+              ec2:ResourceTag/cns-guardrail: 'true'
+          Action: ec2:RunInstances
+          Resource: arn:aws:ec2:*:*:security-group/*
+          Effect: Deny
+        - Condition:
+            ArnLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/tenant-custom-*
+            Bool:
+              ec2:Encrypted: 'false'
+          Action: ec2:RunInstances
+          Resource: arn:aws:ec2:*:*:volume/*
+          Effect: Deny
+        - Condition:
+            ArnLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/tenant-custom-*
+            StringNotEquals:
+              ec2:RootDeviceType: ebs
+          Action: ec2:RunInstances
+          Resource: arn:aws:ec2:*:*:instance/*
+          Effect: Deny
+        - Condition:
+            ArnLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/tenant-custom-*
+            StringEquals:
+              ec2:ResourceTag/Zone2ZoneName:
+              - TGW
+              - ECIF
+          Action: "*"
+          Resource: "*"
+          Effect: Deny
+        - Condition:
+            ArnLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/tenant-custom-*
+            BoolIfExists:
+              elasticfilesystem:Encrypted: 'false'
+              kms:MultiRegion: 'true'
+              rds:StorageEncrypted: 'false'
+              secretsmanager:BlockPublicPolicy: 'false'
+            StringNotEqualsIfExists:
+              lambda:Principal:
+              - sns.amazonaws.com
+              - s3.amazonaws.com
+              - sqs.amazonaws.com
+              - dynamodb.amazonaws.com
+              - events.amazonaws.com
+              - cloudwatch.amazonaws.com
+              - logs.amazonaws.com
+              sns:Protocol:
+              - email
+              - email-json
+              - https
+              - sqs
+              - application
+              - lambda
+            StringLikeIfExists:
+              lambda:FunctionArn:
+              - arn:aws:lambda:*:*:function:cns*
+              - arn:aws:lambda:*:*:function:CNS*
+          Action:
+          - elasticfilesystem:CreateFileSystem
+          - kms:CreateKey
+          - lambda:AddPermission
+          - lambda:CreateEventSourceMapping
+          - lambda:DeleteEventSourceMapping
+          - lambda:RemovePermission
+          - lambda:UpdateEventSourceMapping
+          - rds:CreateDBInstance
+          - secretsmanager:PutResourcePolicy
+          - sns:Subscribe
+          Resource: "*"
+          Effect: Deny
+        - Condition:
+            ArnLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/tenant-custom-*
+            ForAnyValue:StringNotEqualsIfExists:
+              secretsmanager:AddReplicaRegions: ap-southeast-2
+          Action:
+          - secretsmanager:CreateSecret
+          Resource: "*"
+          Effect: Deny
+        - Condition:
+            ArnLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/tenant-custom-*
+            StringNotLikeIfExists:
+              sns:Endpoint:
+              - arn:aws:lambda:ap-southeast-2:*:function:*
+              - arn:aws:sqs:ap-southeast-2:*:*
+              rds:DatabaseEngine:
+              - sqlserver*
+              - oracle*
+          Action:
+          - rds:CreateDBInstance
+          - sns:Subscribe
+          Resource: "*"
+          Effect: Deny
+        - Condition:
+            ArnLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/tenant-custom-*
+          Action:
+          - ecr:BatchImportUpstreamImage
+          - ecr:CreatePullThroughCacheRule
+          - ecr:DeletePullThroughCacheRule
+          - ecr:DeleteRegistryPolicy
+          - ecr:DeleteRepositoryPolicy
+          - ecr:DescribePullThroughCacheRules
+          - ecr:GetRegistryPolicy
+          - ecr:GetRepositoryPolicy
+          - ecr:PutImageScanningConfiguration
+          - ecr:PutRegistryPolicy
+          - ecr:PutReplicationConfiguration
+          - ecr:ReplicateImage
+          - ecr:SetRepositoryPolicy
+          Resource: "*"
+          Effect: Deny

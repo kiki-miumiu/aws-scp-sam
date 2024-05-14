@@ -1,0 +1,44 @@
+name: cns-ga-prod
+
+on:
+  push:
+    tags:
+      - "cns-ga-prod"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build:
+
+    runs-on: default
+    environment: cns-ga-prod
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Run a one-line script # Runs a single command using the runners shell
+      run: echo Hello, world!
+    - uses: aws-actions/setup-sam@v2
+      with:
+        use-installer: true
+    - name: Configure AWS credentials (for Trust)
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        audience: sts.amazonaws.com
+        role-to-assume: ${{ secrets.GITHUBOIDCROLEARN }}
+        aws-region: ${{ vars.AWS_REGION }}
+        role-session-name: "Github-Actions-OIDC"
+    - name: Configure AWS credentials (AssumeRole)
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.GITHUBCICDROLEARN}}
+        role-session-name: "GitHub-Actions-CICD"
+        aws-region: ${{ vars.AWS_REGION }}
+        role-chaining: true
+    - name: Get identity for AWS
+      run: |
+        aws sts get-caller-identity
+    - name: Deploy Application
+      run: |
+        sam build && sam deploy --no-fail-on-empty-changeset --config-env cns-ga-prod

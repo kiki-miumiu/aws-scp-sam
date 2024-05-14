@@ -1,0 +1,236 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  organisation-scp-pipeline Cloudformation
+Parameters:
+  Environment:
+    Type: String
+  TenantOrganisationIDs:
+    Type: CommaDelimitedList
+    Description: List of OUs
+Resources:
+  Policy:
+    Type: AWS::Organizations::Policy
+    Properties:
+      Type: SERVICE_CONTROL_POLICY
+      Name: !Sub ${Environment}-common-tenant-cns-protect
+      TargetIds: !Ref TenantOrganisationIDs
+      Content:
+        Version: '2012-10-17'
+        Statement:
+        - Condition:
+            ArnLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/tenant-custom-*
+              - arn:aws:iam::*:role/tenant-engineer*
+              - arn:aws:iam::*:role/tenant-automation*
+            StringEquals:
+              aws:ResourceTag/cns-guardrail: 'true'
+          NotAction:
+          - acm:Describe*
+          - acm:Get*
+          - acm:List*
+          - autoscaling:Describe*
+          - autoscaling:Get*
+          - cloudformation:BatchDescribeTypeConfigurations
+          - cloudformation:Describe*
+          - cloudformation:Detect*
+          - cloudformation:EstimateTemplateCost
+          - cloudformation:Get*
+          - cloudformation:List*
+          - cloudformation:ValidateTemplate
+          - cloudtrail:Describe*
+          - cloudtrail:Get*
+          - cloudtrail:List*
+          - cloudtrail:Lookup*
+          - cloudwatch:Describe*
+          - cloudwatch:Get*
+          - cloudwatch:List*
+          - codebuild:BatchGet*
+          - codebuild:Describe*
+          - codebuild:Get*
+          - codebuild:List*
+          - codepipeline:Get*
+          - codepipeline:List*
+          - config:Batch*
+          - config:DeliverConfigSnapshot
+          - config:Describe*
+          - config:Get*
+          - config:List*
+          - config:Select*
+          - ec2:Describe*
+          - ec2:Get*
+          - ec2:List*
+          - ec2:AssociateDhcpOptions
+          - ec2:AssociateEnclaveCertificateIamRole
+          - ec2:CreateFleet
+          - ec2:CreateFlowLogs
+          - ec2:CreateImage
+          - ec2:CreateNetworkInsightsPath
+          - ec2:CreateNetworkInterface
+          - ec2:CreateReplaceRootVolumeTask
+          - ec2:DisassociateEnclaveCertificateIamRole
+          - ec2:ImportImage
+          - ec2:ModifyFleet
+          - ec2:ModifyInstanceAttribute
+          - ec2:ModifyNetworkInterfaceAttribute
+          - ec2:ModifySpotFleetRequest
+          - ec2:ModifyVpcTenancy
+          - ec2:RequestSpotFleet
+          - ec2:RequestSpotInstances
+          - ec2:RunInstances
+          - eks:AccessKubernetesApi
+          - eks:Describe*
+          - eks:List*
+          - elasticfilesystem:Describe*
+          - elasticfilesystem:List*
+          - elasticloadbalancing:Describe*
+          - events:Describe*
+          - events:List*
+          - events:TestEventPattern
+          - kms:CreateGrant
+          - kms:Decrypt
+          - kms:Describe*
+          - kms:Encrypt
+          - kms:Generate*
+          - kms:Get*
+          - kms:List*
+          - kms:ReEncrypt*
+          - kms:Verify*
+          - lambda:Get*
+          - lambda:List*
+          - logs:Describe*
+          - logs:FilterLogEvents
+          - logs:Get*
+          - logs:List*
+          - logs:Start*
+          - logs:Stop*
+          - logs:TestMetricFilter
+          - rds:CreateDBCluster
+          - rds:CreateDBInstance
+          - rds:CreateDBInstanceReadReplica
+          - rds:Describe*
+          - rds:List*
+          - rds:Restore*
+          - s3:Describe*
+          - s3:List*
+          - scheduler:Get*
+          - scheduler:List*
+          - secretsmanager:DescribeSecret
+          - secretsmanager:GetRandomPassword
+          - secretsmanager:GetResourcePolicy
+          - secretsmanager:List*
+          - sns:CheckIfPhoneNumberIsOptedOut
+          - sns:Get*
+          - sns:List*
+          - sqs:Get*
+          - sqs:List*
+          - ssm:Describe*
+          - ssm:Get*
+          - ssm:List*
+          Resource: "*"
+          Effect: Deny
+        - Condition:
+            StringLike:
+              aws:RequestTag/cns-guardrail: "*"
+            ArnLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/tenant-custom-*
+              - arn:aws:iam::*:role/tenant-engineer*
+              - arn:aws:iam::*:role/tenant-automation*
+          Action:
+          - acm:AddTagsToCertificate
+          - autoscaling:CreateOrUpdateTags
+          - cloudformation:TagResource
+          - cloudtrail:AddTags
+          - cloudwatch:TagResource
+          - config:TagResource
+          - codepipeline:TagResource
+          - config:TagResource
+          - ec2:CreateTags
+          - eks:TagResource
+          - elasticfilesystem:CreateTags
+          - elasticfilesystem:TagResource
+          - elasticloadbalancing:AddTags
+          - events:TagResource
+          - kms:TagResource
+          - lambda:TagResource
+          - logs:TagLogGroup
+          - logs:TagResource
+          - rds:AddTagsToResource
+          - scheduler:TagResource
+          - secretsmanager:TagResource
+          - sns:TagResource
+          - sqs:TagQueue
+          - ssm:AddTagsToResource
+          Resource: "*"
+          Effect: Deny
+        - Condition:
+            StringLike:
+              aws:TagKeys/cns-guardrail: "*"
+            ArnLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/tenant-custom-*
+              - arn:aws:iam::*:role/tenant-engineer*
+              - arn:aws:iam::*:role/tenant-automation*
+          Action:
+          - acm:RemoveTagsFromCertificate
+          - autoscaling:DeleteTags
+          - cloudformation:UntagResource
+          - cloudtrail:RemoveTags
+          - cloudwatch:UntagResource
+          - config:UntagResource
+          - codepipeline:UntagResource
+          - config:UntagResource
+          - ec2:DeleteTags
+          - eks:UntagResource
+          - elasticfilesystem:DeleteTags
+          - elasticfilesystem:UntagResource
+          - elasticloadbalancing:RemoveTags
+          - events:UntagResource
+          - kms:UntagResource
+          - lambda:UntagResource
+          - logs:UntagLogGroup
+          - logs:UntagResource
+          - rds:RemoveTagsFromResource
+          - route53:ChangeTagsForResource
+          - scheduler:UntagResource
+          - secretsmanager:UntagResource
+          - sns:UntagResource
+          - sqs:UntagQueue
+          - ssm:RemoveTagsFromResource
+          Resource: "*"
+          Effect: Deny
+        - Condition:
+            ArnLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/tenant-custom-*
+              - arn:aws:iam::*:role/tenant-engineer*
+              - arn:aws:iam::*:role/tenant-automation*
+          Action:
+          - cloudformation:Cancel*
+          - cloudformation:Continue*
+          - cloudformation:Create*
+          - cloudformation:Delete*
+          - cloudformation:Rollback*
+          - cloudformation:Set*
+          - cloudformation:Signal*
+          - cloudformation:Update*
+          - cloudtrail:PutEventSelectors
+          - cloudtrail:PutInsightSelectors
+          - cloudtrail:UpdateTrail
+          - lambda:Create*
+          - lambda:Delete*
+          - lambda:Publish*
+          - lambda:Put*
+          - lambda:Update*
+          - s3:Create*
+          - s3:Delete*
+          - s3:GetObject
+          - s3:Put*
+          - s3:Replicate*
+          - s3:Restore*
+          Effect: Deny
+          Resource:
+          - arn:aws:*:*:*:*cns*
+          - arn:aws:*:*:*:*CNS*

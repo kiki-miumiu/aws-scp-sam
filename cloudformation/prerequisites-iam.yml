@@ -1,0 +1,344 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Sample SAM Template for
+
+Parameters:
+  Name:
+    Description: Name of App
+    Type: String
+    Default: cns-aws-scp
+  Environment:
+    Description: Name of Environment Type. Example - prod, test
+    Type: String
+    Default: canary-pv
+  Owner:
+    Description: An owner's login or team
+    Type: String
+    AllowedPattern: ".+"
+    Default: Platform
+  S3KeyId:
+    Description: ID of S3 KMS custom key
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: /CNS/resources/s3_key_id
+  S3KeyArn:
+    Description: ID of S3 KMS custom key
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: /CNS/resources/s3_key_arn
+  SourceVPC:
+    Description: only allow traffic from this vpc
+    Type: String
+    Default: "vpc-0ebb4ee6c9c0859a3"
+  Subject:
+    Type: String
+Conditions:
+  CreateInCanaryPreviewOnly: 
+    Fn::Equals: [ !Ref Environment, "canary-pv" ]
+  CreateInCanaryProdOnly: 
+    Fn::Equals: [ !Ref Environment, "canary-prod" ]
+  CreateInCNSPreviewOnly: 
+    Fn::Equals: [ !Ref Environment, "cns-pv" ]  
+  CreateInGAClabOnly: 
+    Fn::Equals: [ !Ref Environment, "cns-ga-clab" ]  
+  CreateInGANonpOnly: 
+    Fn::Equals: [ !Ref Environment, "cns-ga-nonp" ]
+  CreateInGAProdOnly: 
+    Fn::Equals: [ !Ref Environment, "cns-ga-nonp" ]
+Resources:
+  ##########################################
+  # S3
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/AWS_S3.html
+  ##########################################
+  ArtifactsBucket:
+    Type: "AWS::S3::Bucket"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W35
+            reason: "Object Logging setting is already configured for all buckets in CloudTrail."
+    Properties:
+      BucketName: !Sub "cns-aws-scp-${AWS::AccountId}"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: "aws:kms"
+              KMSMasterKeyID: !Ref S3KeyId
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          # If this enables, it may be impossible to roll back when update stack operation fails.
+          # - Id: ExpirationInDays
+          #   Status: Enabled
+          #   ExpirationInDays: 90
+          - Id: AbortIncompleteMultipartUpload
+            Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 3
+      Tags:
+        - Key: DataClassification
+          Value: GroupUse
+
+  ArtifactsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ArtifactsBucket
+      PolicyDocument:
+        Statement:
+          - Sid: "DenyHTTPTraffic"
+            Effect: "Deny"
+            Principal: "*"
+            Action: "s3:*"
+            Resource: !Sub "${ArtifactsBucket.Arn}/*"
+            Condition:
+              Bool:
+                "aws:SecureTransport": "false"
+
+  GitHubOidc:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        - 6938fd4d98bab03faadb97b34396831e3780aea1
+  GithubOIDCRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: GithubOIDCRole
+      Policies:
+        - PolicyName: DenyOutsideAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Condition:
+                  StringNotEquals:
+                    aws:SourceVpc:
+                      - !Ref SourceVPC
+                Action: '*'
+                Resource: '*'
+                Effect: Deny
+        - PolicyName: AllowAssumeRole
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sts:AssumeRole
+                  - sts:TagSession
+                Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/GithubCICDRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Action: sts:AssumeRoleWithWebIdentity
+            Effect: Allow
+            Principal:
+              Federated: !Sub arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+              StringLike:
+                token.actions.githubusercontent.com:sub: !Split
+                  - ','
+                  - !Sub ${Subject}
+
+  AWSSCPGithubCICDPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      ManagedPolicyName: cns-aws-scp-github-cicd
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AccessToS3Bucket
+            Action:
+              - s3:ListBucket
+              - s3:GetBucketAcl
+              - s3:GetBucketLocation
+              - s3:GetObject*
+              - s3:ListObject*
+              - s3:PutObject
+              - s3:DeleteObject*
+            Effect: Allow
+            Resource:
+              - !GetAtt ArtifactsBucket.Arn
+              - !Join
+                  - ""
+                  - - !GetAtt ArtifactsBucket.Arn
+                    - "/*"
+          - Sid: AllowS3KMS
+            Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:Encrypt
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource:
+              - !Ref S3KeyArn
+          - Sid: Cloudformation
+            Effect: Allow
+            Action:
+              - cloudformation:CancelUpdateStack
+              - cloudformation:ContinueUpdateRollback
+              - cloudformation:CreateChangeSet
+              - cloudformation:CreateStack
+              - cloudformation:DeleteChangeSet
+              - cloudformation:DeleteStack
+              - cloudformation:ExecuteChangeSet
+              - cloudformation:SignalResource
+              - cloudformation:UpdateStack
+              - cloudformation:ValidateTemplate
+              - cloudformation:Describe*
+              - cloudformation:GetTemplate*
+              - cloudformation:List*
+            Resource: '*'
+          - Sid: ListReadOrg
+            Action:
+              - organizations:DescribeOrganization
+              - organizations:DescribeOrganizationalUnit
+              - organizations:DescribeAccount
+              - organizations:ListRoots
+              - organizations:ListOrganizationalUnitsForParent
+              - organizations:ListParents 
+              - organizations:ListChildren
+              - organizations:ListAccounts
+              - organizations:ListAccountsForParent
+              - organizations:ListTagsForResource
+            Effect: Allow
+            Resource: '*'
+          - Sid: AccessAnalyzer
+            Action:
+              - access-analyzer:ValidatePolicy
+            Effect: Allow
+            Resource: '*'
+          - Sid: ListReadPolicy
+            Action:
+              - organizations:ListPolicies 
+              - organizations:ListPoliciesForTarget
+              - organizations:ListTargetsForPolicy
+              - organizations:DescribePolicy
+              - organizations:DescribeEffectivePolicy
+            Effect: Allow
+            Resource: '*'         
+            Condition:
+              StringLikeIfExists:
+                organizations:PolicyType:
+                  "SERVICE_CONTROL_POLICY"
+
+  GithubCICDRoleForCanaryPV:
+    Type: AWS::IAM::Role
+    DependsOn: GithubOIDCRole
+    Properties:
+      RoleName: cns-aws-scp-github-cicd-canary-pv
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Action:
+              - sts:AssumeRole
+              - sts:TagSession
+            Effect: Allow
+            Condition:
+              StringEquals:
+                aws:SourceVpc:
+                  - !Ref SourceVPC
+            Principal:
+              AWS: 
+                - !Sub arn:aws:iam::${AWS::AccountId}:role/GithubOIDCRole
+      ManagedPolicyArns:
+        - !Ref AWSSCPGithubCICDPolicy
+      Policies:
+        - PolicyName: cns-aws-scp-cicd
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: OnlyAllowAttachDetachCertainOU
+                Action:
+                  - organizations:AttachPolicy
+                  - organizations:DetachPolicy
+                Effect: Allow
+                Resource:
+                  - arn:aws:organizations::606929559445:ou/o-w4mbxaieqf/ou-jax6-w64p79s7 # CNS-CN
+                  - arn:aws:organizations::606929559445:ou/o-w4mbxaieqf/ou-jax6-2rnxh3f0 #CNS-CN/CLAB/Tenant
+                  - arn:aws:organizations::606929559445:ou/o-w4mbxaieqf/ou-jax6-y7tzhj05 #CNS-CN/NONP/Tenant
+                  - arn:aws:organizations::606929559445:ou/o-w4mbxaieqf/ou-jax6-lhjk2hyh #CNS-PV
+                  - arn:aws:organizations::606929559445:ou/o-w4mbxaieqf/ou-jax6-pyfdew62 #CNS-PV/CLAB/Tenant
+                  - arn:aws:organizations::606929559445:ou/o-w4mbxaieqf/ou-jax6-w633wdu7 #CNS-PV/NONP/Tenant
+                  - arn:aws:organizations::606929559445:policy/o-w4mbxaieqf/service_control_policy/* # need this to attach policy to ou
+                Condition:
+                  StringLikeIfExists:
+                    organizations:PolicyType:
+                      "SERVICE_CONTROL_POLICY" 
+              - Sid: AllowModifyPolicy #Risk: modify existing policy attached to other ou
+                Action:
+                  - organizations:CreatePolicy
+                  - organizations:UpdatePolicy
+                  - organizations:DeletePolicy
+                Effect: Allow
+                Resource:
+                  - arn:aws:organizations::606929559445:policy/o-w4mbxaieqf/service_control_policy/*
+                Condition:
+                  StringLikeIfExists:
+                    organizations:PolicyType:
+                      "SERVICE_CONTROL_POLICY" 
+  GithubCICDRoleForCanaryProd:
+    Type: AWS::IAM::Role
+    DependsOn: GithubOIDCRole
+    Properties:
+      RoleName: cns-aws-scp-github-cicd-canary-prod
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Action:
+              - sts:AssumeRole
+              - sts:TagSession
+            Effect: Allow
+            Condition:
+              StringEquals:
+                aws:SourceVpc:
+                  - !Ref SourceVPC
+            Principal:
+              AWS: 
+                - !Sub arn:aws:iam::${AWS::AccountId}:role/GithubOIDCRole
+      ManagedPolicyArns:
+        - !Ref AWSSCPGithubCICDPolicy
+      Policies:
+        - PolicyName: cns-aws-scp-cicd
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: OnlyAllowAttachDetachCertainOU
+                Action:
+                  - organizations:AttachPolicy
+                  - organizations:DetachPolicy
+                Effect: Allow
+                Resource:
+                  - arn:aws:organizations::606929559445:root/o-w4mbxaieqf/r-jax6 # Canary Root
+                  - arn:aws:organizations::606929559445:ou/o-w4mbxaieqf/ou-jax6-ew8t2ulg #Canary Pool
+                  - arn:aws:organizations::606929559445:ou/o-w4mbxaieqf/ou-jax6-n0k31i3v #Canary Sandbox
+                  - arn:aws:organizations::606929559445:ou/o-w4mbxaieqf/ou-jax6-6czoose2 #Canary CNS-GA
+                  - arn:aws:organizations::606929559445:ou/o-w4mbxaieqf/ou-jax6-v0p033cn #Canary CNS-GA/CLAB/Tenant
+                  - arn:aws:organizations::606929559445:ou/o-w4mbxaieqf/ou-jax6-0al9ndj2 #Canary CNS-GA/NONP/Tenant
+                  - arn:aws:organizations::606929559445:policy/o-w4mbxaieqf/service_control_policy/* # need this to attach policy to ou
+                Condition:
+                  StringLikeIfExists:
+                    organizations:PolicyType:
+                      "SERVICE_CONTROL_POLICY" 
+              - Sid: AllowModifyPolicy #Risk: modify existing policy attached to other ou
+                Action:
+                  - organizations:CreatePolicy
+                  - organizations:UpdatePolicy
+                  - organizations:DeletePolicy
+                Effect: Allow
+                Resource:
+                  - arn:aws:organizations::606929559445:policy/o-w4mbxaieqf/service_control_policy/*
+                Condition:
+                  StringLikeIfExists:
+                    organizations:PolicyType:
+                      "SERVICE_CONTROL_POLICY" 
+
+Outputs:
+  ArtifactsBucket:
+    Description: Name of S3 bucket for Artifacts
+    Value: !Ref ArtifactsBucket

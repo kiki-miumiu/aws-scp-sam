@@ -1,0 +1,173 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  organisation-scp-pipeline Cloudformation
+Parameters:
+  Environment:
+    Type: String
+  OrganisationIDs:
+    Type: CommaDelimitedList
+    Description: List of OUs
+Resources:
+  Common:
+    Type: AWS::Organizations::Policy
+    Properties:
+      Type: SERVICE_CONTROL_POLICY
+      Name: !Sub ${Environment}-common1
+      TargetIds: !Ref OrganisationIDs
+      Content: 
+        Version: '2012-10-17'
+        Statement:
+        - Action:
+          - cloudtrail:StopLogging
+          - cloudtrail:DeleteTrail
+          Resource: "*"
+          Effect: Deny
+          Condition:
+            ArnNotLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/OrganizationAccountAccessRole
+              - arn:aws:iam::*:role/AdministratorRole
+              - arn:aws:iam::*:role/cns*
+              - arn:aws:iam::*:role/AWSServiceRoleForCloudFormationStackSetsOrgAdmin
+              - arn:aws:iam::*:role/stackset*
+              - arn:aws:iam::*:role/CloudFormationAdminRole
+        - Action:
+          - ec2:AcceptTransitGateway*
+          - ec2:AttachEgressOnlyInternetGateway
+          - ec2:AssociateTransitGateway*
+          - ec2:CreateTransitGateway*
+          - ec2:DeleteTransitGateway*
+          - ec2:DisableTransitGatewayRouteTablePropagation
+          - ec2:DisassociateTransitGateway*
+          - ec2:EnableTransitGatewayRouteTablePropagation
+          - ec2:ModifyTransitGateway*
+          - ec2:ReplaceTransitGatewayRoute
+          Resource: "*"
+          Effect: Deny
+          Condition:
+            ArnNotLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/OrganizationAccountAccessRole
+              - arn:aws:iam::*:role/AdministratorRole
+              - arn:aws:iam::*:role/cns*
+              - arn:aws:iam::*:role/AWSServiceRoleForCloudFormationStackSetsOrgAdmin
+              - arn:aws:iam::*:role/stackset*
+              - arn:aws:iam::*:role/CloudFormationAdminRole
+              - arn:aws:iam::*:role/AcoeCICDRole
+        - Action:
+          - globalaccelerator:Create*
+          - globalaccelerator:Update*
+          Resource: "*"
+          Effect: Deny
+          Condition:
+            ArnNotLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/OrganizationAccountAccessRole
+              - arn:aws:iam::*:role/AdministratorRole
+              - arn:aws:iam::*:role/cns*
+              - arn:aws:iam::*:role/AWSServiceRoleForCloudFormationStackSetsOrgAdmin
+              - arn:aws:iam::*:role/stackset*
+              - arn:aws:iam::*:role/CloudFormationAdminRole
+              - arn:aws:iam::*:role/AcoeCICDRole
+        - Action:
+          - ec2:AcceptVpcPeeringConnection
+          - ec2:AttachInternetGateway
+          - ec2:AttachVpnGateway
+          - ec2:AuthorizeClientVpnIngress
+          - ec2:CreateClientVpnEndpoint
+          - ec2:CreateClientVpnRoute
+          - ec2:CreateInternetGateway
+          - ec2:CreateNatGateway
+          - ec2:CreateVpcPeeringConnection
+          - ec2:CreateVpnConnection
+          - ec2:CreateVpnConnectionRoute
+          - ec2:CreateVpnGateway
+          - ec2:DeleteClientVpnEndpoint
+          - ec2:DeleteClientVpnRoute
+          - ec2:DeleteInternetGateway
+          - ec2:DeleteNatGateway
+          - ec2:DeleteNatGateway
+          - ec2:DeleteVpcPeeringConnection
+          - ec2:DeleteVpnConnection
+          - ec2:DeleteVpnConnectionRoute
+          - ec2:DeleteVpnGateway
+          - ec2:DetachInternetGateway
+          - ec2:DetachVpnGateway
+          - ec2:DisassociateClientVpnTargetNetwork
+          - ec2:ModifyClientVpnEndpoint
+          - ec2:ModifyVpcPeeringConnectionOptions
+          - ec2:RejectVpcPeeringConnection
+          - ec2:RevokeClientVpnIngress
+          - ec2:TerminateClientVpnConnections
+          - ec2:CreateNatGateway
+          Resource: "*"
+          Effect: Deny
+          Condition:
+            ArnNotLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/OrganizationAccountAccessRole
+              - arn:aws:iam::*:role/AdministratorRole
+              - arn:aws:iam::*:role/cns*
+              - arn:aws:iam::*:role/AWSServiceRoleForCloudFormationStackSetsOrgAdmin
+              - arn:aws:iam::*:role/stackset*
+              - arn:aws:iam::*:role/CloudFormationAdminRole
+              - arn:aws:iam::*:role/AcoeCICDRole
+        - Action:
+          - directconnect:CreatePrivateVirtualInterface
+          - directconnect:DeleteBGPPeer
+          - directconnect:DeleteLag
+          - directconnect:AssociateHostedConnection
+          - directconnect:CreateInterconnect
+          - directconnect:CreatePublicVirtualInterface
+          - directconnect:CreateLag
+          - directconnect:CreateDirectConnectGateway
+          - directconnect:AssociateVirtualInterface
+          - directconnect:AllocateConnectionOnInterconnect
+          - directconnect:AssociateConnectionWithLag
+          - directconnect:AllocatePrivateVirtualInterface
+          - directconnect:DeleteInterconnect
+          - directconnect:AllocateHostedConnection
+          - directconnect:DeleteDirectConnectGateway
+          - directconnect:DeleteVirtualInterface
+          - directconnect:DeleteDirectConnectGatewayAssociation
+          - directconnect:CreateDirectConnectGatewayAssociation
+          - directconnect:DeleteConnection
+          - directconnect:CreateBGPPeer
+          - directconnect:AllocatePublicVirtualInterface
+          - directconnect:CreateConnection
+          Resource: "*"
+          Effect: Deny
+          Condition:
+            ArnNotLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/OrganizationAccountAccessRole
+              - arn:aws:iam::*:role/AdministratorRole
+              - arn:aws:iam::*:role/cns*
+              - arn:aws:iam::*:role/AWSServiceRoleForCloudFormationStackSetsOrgAdmin
+              - arn:aws:iam::*:role/stackset*
+              - arn:aws:iam::*:role/CloudFormationAdminRole
+              - arn:aws:iam::*:role/AcoeCICDRole
+        - Action:
+          - globalaccelerator:DeleteListener
+          - globalaccelerator:DeleteAccelerator
+          - globalaccelerator:UpdateListener
+          - globalaccelerator:UpdateAccelerator
+          - globalaccelerator:CreateEndpointGroup
+          - globalaccelerator:UpdateAcceleratorAttributes
+          - globalaccelerator:UpdateEndpointGroup
+          - globalaccelerator:CreateListener
+          - globalaccelerator:CreateAccelerator
+          - globalaccelerator:DeleteEndpointGroup
+          Resource: "*"
+          Effect: Deny
+          Condition:
+            ArnNotLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/OrganizationAccountAccessRole
+              - arn:aws:iam::*:role/AdministratorRole
+              - arn:aws:iam::*:role/cns*
+              - arn:aws:iam::*:role/AWSServiceRoleForCloudFormationStackSetsOrgAdmin
+              - arn:aws:iam::*:role/stackset*
+              - arn:aws:iam::*:role/CloudFormationAdminRole
+              - arn:aws:iam::*:role/AcoeCICDRole

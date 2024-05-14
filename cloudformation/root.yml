@@ -1,0 +1,198 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  organisation-scp-pipeline Cloudformation
+Parameters:
+  RootID:
+    Type: String
+    Description: Root OU ID
+  Environment:
+    Type: String
+Resources:
+  RootPolicy:
+    Type: AWS::Organizations::Policy
+    Properties:
+      Type: SERVICE_CONTROL_POLICY
+      Name: root
+      TargetIds: 
+        - !Ref RootID
+      Content:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: AllowGlobalServices
+          Effect: Deny
+          NotAction:
+          - a4b:*
+          - acm:*
+          - aws-marketplace-management:*
+          - aws-marketplace:*
+          - aws-portal:*
+          - awsbillingconsole:*
+          - budgets:*
+          - ce:*
+          - chime:*
+          - cloudfront:*
+          - config:*
+          - cur:*
+          - directconnect:*
+          - ec2:DescribeRegions
+          - ec2:DescribeTransitGateways
+          - ec2:DescribeVpnGateways
+          - fms:*
+          - globalaccelerator:*
+          - health:*
+          - iam:*
+          - importexport:*
+          - kms:*
+          - mobileanalytics:*
+          - networkmanager:*
+          - organizations:*
+          - pricing:*
+          - route53:*
+          - route53domains:*
+          - s3:GetAccountPublic*
+          - s3:ListAllMyBuckets
+          - s3:PutAccountPublic*
+          - shield:*
+          - sts:*
+          - support:*
+          - trustedadvisor:*
+          - waf-regional:*
+          - waf:*
+          - wafv2:*
+          - wellarchitected:*
+          Resource: "*"
+          Condition:
+            StringNotEquals:
+              aws:RequestedRegion:
+              - us-east-1
+              - us-east-2
+              - ap-southeast-2
+            ArnNotLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/OrganizationAccountAccessRole
+              - arn:aws:iam::*:role/AdministratorRole
+              - arn:aws:iam::*:role/cns*
+              - arn:aws:iam::*:role/aws-service-role/organizations.amazonaws.com/AWSServiceRoleForOrganizations
+              - arn:aws:iam::*:role/AWSServiceRoleForCloudFormationStackSetsOrgAdmin
+              - arn:aws:iam::*:role/SOEBuildAccessRole
+              - arn:aws:iam::*:role/stackset*
+              - arn:aws:iam::*:role/ServiceCatalog*
+              - arn:aws:iam::*:role/CloudFormationAdminRole
+              - arn:aws:iam::*:role/AcoeCICDRole
+        - Action:
+          - aws-portal:ModifyBilling
+          - aws-portal:ModifyPaymentMethods
+          Resource: "*"
+          Effect: Deny
+          Condition:
+            ArnNotLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/OrganizationAccountAccessRole
+              - arn:aws:iam::*:role/AdministratorRole
+              - arn:aws:iam::*:role/cns*
+        - Action:
+          - config:DeleteConfigRule
+          - config:DeleteConfigurationRecorder
+          - config:DeleteDeliveryChannel
+          - config:StopConfigurationRecorder
+          Resource: "*"
+          Effect: Deny
+          Condition:
+            ArnNotLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/OrganizationAccountAccessRole
+              - arn:aws:iam::*:role/AdministratorRole
+              - arn:aws:iam::*:role/cns*
+              - arn:aws:iam::*:role/AWSServiceRoleForCloudFormationStackSetsOrgAdmin
+              - arn:aws:iam::*:role/stackset*
+              - arn:aws:iam::*:role/CloudFormationAdminRole
+        - Action:
+          - guardduty:DeleteDetector
+          - guardduty:DeleteInvitations
+          - guardduty:DeleteIPSet
+          - guardduty:DeleteMembers
+          - guardduty:DeleteThreatIntelSet
+          - guardduty:DisassociateFromMasterAccount
+          - guardduty:DisassociateMembers
+          - guardduty:StopMonitoringMembers
+          - guardduty:UpdateDetector
+          Resource: "*"
+          Effect: Deny
+          Condition:
+            ArnNotLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/OrganizationAccountAccessRole
+              - arn:aws:iam::*:role/AdministratorRole
+              - arn:aws:iam::*:role/cns*
+              - arn:aws:iam::*:role/AWSServiceRoleForCloudFormationStackSetsOrgAdmin
+              - arn:aws:iam::*:role/stackset*
+              - arn:aws:iam::*:role/CloudFormationAdminRole
+        - Action:
+          - securityhub:DeleteInvitations
+          - securityhub:DisableSecurityHub
+          - securityhub:DisassociateFromMasterAccount
+          - securityhub:DeleteMembers
+          - securityhub:DisassociateMembers
+          Resource: "*"
+          Effect: Deny
+          Condition:
+            ArnNotLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/OrganizationAccountAccessRole
+              - arn:aws:iam::*:role/AdministratorRole
+              - arn:aws:iam::*:role/cns*
+              - arn:aws:iam::*:role/AWSServiceRoleForCloudFormationStackSetsOrgAdmin
+              - arn:aws:iam::*:role/stackset*
+              - arn:aws:iam::*:role/CloudFormationAdminRole
+        - Action:
+          - macie2:DisassociateFromMasterAccount
+          - macie2:DisableOrganizationAdminAccount
+          - macie2:DisableMacie
+          - macie2:DeleteMember
+          Resource: "*"
+          Effect: Deny
+          Condition:
+            ArnNotLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/OrganizationAccountAccessRole
+              - arn:aws:iam::*:role/AdministratorRole
+              - arn:aws:iam::*:role/cns*
+              - arn:aws:iam::*:role/AWSServiceRoleForCloudFormationStackSetsOrgAdmin
+              - arn:aws:iam::*:role/stackset*
+              - arn:aws:iam::*:role/CloudFormationAdminRole
+        - Action:
+          - cloudformation:DeleteStack
+          Effect: Deny
+          Resource:
+          - arn:aws:cloudformation::*:stack/cns-*
+          - arn:aws:cloudformation::*:stackset/cns-*
+          - arn:aws:cloudformation::*:stackInstances/cns-*
+          Condition:
+            ArnNotLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/OrganizationAccountAccessRole
+              - arn:aws:iam::*:role/AdministratorRole
+              - arn:aws:iam::*:role/cns*
+              - arn:aws:iam::*:role/aws-service-role/organizations.amazonaws.com/AWSServiceRoleForOrganizations
+              - arn:aws:iam::*:role/AWSServiceRoleForCloudFormationStackSetsOrgAdmin
+              - arn:aws:iam::*:role/stackset*
+              - arn:aws:iam::*:role/CloudFormationAdminRole
+        - Action:
+          - Iam:CreateRole
+          Effect: Deny
+          Resource:
+          - arn:aws:iam::*:role/cns*
+          Condition:
+            ArnNotLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/OrganizationAccountAccessRole
+              - arn:aws:iam::*:role/AdministratorRole
+              - arn:aws:iam::*:role/cns*
+              - arn:aws:iam::*:role/AWSServiceRoleForCloudFormationStackSetsOrgAdmin
+              - arn:aws:iam::*:role/stackset*
+              - arn:aws:iam::*:role/CloudFormationAdminRole
+              - arn:aws:iam::*:role/AcoeCICDRole
+
+        
+            

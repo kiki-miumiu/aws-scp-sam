@@ -1,0 +1,82 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  organisation-scp-pipeline Cloudformation
+Parameters:
+  Environment:
+    Type: String
+  OrganisationIDs:
+    Type: CommaDelimitedList
+    Description: List of OUs
+Resources:
+  Common:
+    Type: AWS::Organizations::Policy
+    Properties:
+      Type: SERVICE_CONTROL_POLICY
+      Name: !Sub ${Environment}-common2
+      TargetIds: !Ref OrganisationIDs
+      Content: 
+        Version: '2012-10-17'
+        Statement:
+        - Action:
+          - s3:PutAccountPublicAccessBlock
+          Resource: "*"
+          Effect: Deny
+          Condition:
+            ArnNotLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/AdministratorRole
+              - arn:aws:iam::*:role/OrganizationAccountAccessRole
+              - arn:aws:iam::*:role/cns*
+              - arn:aws:iam::431270699600:role/AcoeCICDRole
+        - Effect: Deny
+          Action:
+          - iam:AddUserToGroup
+          - iam:CreateUser
+          - iam:DeleteUser
+          - iam:RemoveUserFromGroup
+          - iam:TagUser
+          - iam:UntagUser
+          - iam:UpdateUser
+          - iam:AttachUserPolicy
+          - iam:DeleteUserPermissionsBoundary
+          - iam:DeleteUserPolicy
+          - iam:DetachUserPolicy
+          - iam:PutUserPermissionsBoundary
+          - iam:PutUserPolicy
+          Resource:
+          - "*"
+          Condition:
+            ArnNotLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/AdministratorRole
+              - arn:aws:iam::*:role/OrganizationAccountAccessRole
+              - arn:aws:iam::*:role/ServiceCatalogDeploymentRole
+            StringNotEquals:
+              aws:ResourceAccount:
+              - '160367654759'
+              - '968161130974'
+              - '478486143655'
+              - '460961881665'
+              - '156301979809'
+              - '345720784596'
+              - '921734936034'
+        - Action:
+          - events:Update*
+          - events:DisableRule
+          - events:Delete*
+          - events:DeactivateEventSource
+          - events:DeauthorizeConnection
+          - events:PutRule
+          Resource:
+          - arn:aws:events:*:*:rule/cns*
+          Effect: Deny
+          Condition:
+            ArnNotLike:
+              aws:PrincipalARN:
+              - arn:aws:iam::*:role/OrganizationAccountAccessRole
+              - arn:aws:iam::*:role/AdministratorRole
+              - arn:aws:iam::*:role/cns*
+              - arn:aws:iam::*:role/AWSServiceRoleForCloudFormationStackSetsOrgAdmin
+              - arn:aws:iam::*:role/stackset*
+

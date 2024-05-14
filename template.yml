@@ -1,20 +1,59 @@
-AWSTemplateFormatVersion: "2010-09-09"
+AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: >
-  Sample SAM Template for
-
 Parameters:
-  Name:
-    Description: Name of App
+  Environment:
     Type: String
-    Default: hello-world
-  EnvironmentType:
-    Description: Name of Environment Type. Example - prod, test
+    Description: Environment e.g cns-pv, cns-ga
+  OrganisationIDs:
+    Type: String # cannot be CommaDelimitedList when pass to nested stack
+    Description: List of OUs
+  TenantOrganisationIDs:
+    Type: String # cannot be CommaDelimitedList when pass to nested stack
+    Description: List of OUs
+  RootID:
     Type: String
-    Default: test
-  Owner:
-    Description: An owner's login or team
+    Description: Root OU ID
+    Default: "NotInUse"
+  ExtraWhitelist:
     Type: String
-    AllowedPattern: ".+"
-    Default: Platform
-Resources:   # Add Resource here
+    Description: Extra whitelist Services, have to start with ",", e.g ",bedrock:*"
+    Default: ""
+Conditions:
+  CreateInRoot: 
+   Fn::Or:
+    - Fn::Equals: [ !Ref Environment, "canary-prod" ]  
+    - Fn::Equals: [ !Ref Environment, "cns-ga-prod" ]   
+Resources:
+  Common1:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: cloudformation/common1.yml
+      Parameters:
+        Environment: !Ref Environment
+        OrganisationIDs: !Ref OrganisationIDs
+
+  Common2:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: cloudformation/common2.yml
+      Parameters:
+        Environment: !Ref Environment
+        OrganisationIDs: !Ref OrganisationIDs
+
+  CommonWhitelist:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: cloudformation/common-whitelist.yml
+      Parameters:
+        Environment: !Ref Environment
+        OrganisationIDs: !Ref OrganisationIDs
+        ExtraWhitelist: !Ref ExtraWhitelist
+
+  Root:
+    Condition: CreateInRoot
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: cloudformation/root.yml #sam build does not support environment variable for templateURL
+      Parameters:
+        Environment: !Ref Environment
+        RootID: !Ref RootID
