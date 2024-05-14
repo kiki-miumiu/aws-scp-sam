@@ -103,8 +103,6 @@ Resources:
       Url: https://token.actions.githubusercontent.com
       ClientIdList:
         - sts.amazonaws.com
-      ThumbprintList:
-        - 6938fd4d98bab03faadb97b34396831e3780aea1
   GithubOIDCRole:
     Type: AWS::IAM::Role
     Properties:
@@ -259,13 +257,13 @@ Resources:
                   - organizations:DetachPolicy
                 Effect: Allow
                 Resource:
-                  - arn:aws:organizations::606929559445:ou/o-w4mbxaieqf/ou-jax6-w64p79s7 # CNS-CN
-                  - arn:aws:organizations::606929559445:ou/o-w4mbxaieqf/ou-jax6-2rnxh3f0 #CNS-CN/CLAB/Tenant
-                  - arn:aws:organizations::606929559445:ou/o-w4mbxaieqf/ou-jax6-y7tzhj05 #CNS-CN/NONP/Tenant
-                  - arn:aws:organizations::606929559445:ou/o-w4mbxaieqf/ou-jax6-lhjk2hyh #CNS-PV
-                  - arn:aws:organizations::606929559445:ou/o-w4mbxaieqf/ou-jax6-pyfdew62 #CNS-PV/CLAB/Tenant
-                  - arn:aws:organizations::606929559445:ou/o-w4mbxaieqf/ou-jax6-w633wdu7 #CNS-PV/NONP/Tenant
-                  - arn:aws:organizations::606929559445:policy/o-w4mbxaieqf/service_control_policy/* # need this to attach policy to ou
+                  - arn:aws:organizations::${ManagementAccountId}:ou/o-w4mbxaieqf/ou-jax6-w64p79s7 # CNS-CN
+                  - arn:aws:organizations::${ManagementAccountId}:ou/o-w4mbxaieqf/ou-jax6-2rnxh3f0 #CNS-CN/CLAB/Tenant
+                  - arn:aws:organizations::${ManagementAccountId}:ou/o-w4mbxaieqf/ou-jax6-y7tzhj05 #CNS-CN/NONP/Tenant
+                  - arn:aws:organizations::${ManagementAccountId}:ou/o-w4mbxaieqf/ou-jax6-lhjk2hyh #CNS-PV
+                  - arn:aws:organizations::${ManagementAccountId}:ou/o-w4mbxaieqf/ou-jax6-pyfdew62 #CNS-PV/CLAB/Tenant
+                  - arn:aws:organizations::${ManagementAccountId}:ou/o-w4mbxaieqf/ou-jax6-w633wdu7 #CNS-PV/NONP/Tenant
+                  - arn:aws:organizations::${ManagementAccountId}:policy/o-w4mbxaieqf/service_control_policy/* # need this to attach policy to ou
                 Condition:
                   StringLikeIfExists:
                     organizations:PolicyType:
@@ -277,7 +275,7 @@ Resources:
                   - organizations:DeletePolicy
                 Effect: Allow
                 Resource:
-                  - arn:aws:organizations::606929559445:policy/o-w4mbxaieqf/service_control_policy/*
+                  - arn:aws:organizations::${ManagementAccountId}:policy/o-w4mbxaieqf/service_control_policy/*
                 Condition:
                   StringLikeIfExists:
                     organizations:PolicyType:
@@ -314,13 +312,13 @@ Resources:
                   - organizations:DetachPolicy
                 Effect: Allow
                 Resource:
-                  - arn:aws:organizations::606929559445:root/o-w4mbxaieqf/r-jax6 # Canary Root
-                  - arn:aws:organizations::606929559445:ou/o-w4mbxaieqf/ou-jax6-ew8t2ulg #Canary Pool
-                  - arn:aws:organizations::606929559445:ou/o-w4mbxaieqf/ou-jax6-n0k31i3v #Canary Sandbox
-                  - arn:aws:organizations::606929559445:ou/o-w4mbxaieqf/ou-jax6-6czoose2 #Canary CNS-GA
-                  - arn:aws:organizations::606929559445:ou/o-w4mbxaieqf/ou-jax6-v0p033cn #Canary CNS-GA/CLAB/Tenant
-                  - arn:aws:organizations::606929559445:ou/o-w4mbxaieqf/ou-jax6-0al9ndj2 #Canary CNS-GA/NONP/Tenant
-                  - arn:aws:organizations::606929559445:policy/o-w4mbxaieqf/service_control_policy/* # need this to attach policy to ou
+                  - arn:aws:organizations::${ManagementAccountId}:root/o-w4mbxaieqf/r-jax6 # Canary Root
+                  - arn:aws:organizations::${ManagementAccountId}:ou/o-w4mbxaieqf/ou-jax6-ew8t2ulg #Canary Pool
+                  - arn:aws:organizations::${ManagementAccountId}:ou/o-w4mbxaieqf/ou-jax6-n0k31i3v #Canary Sandbox
+                  - arn:aws:organizations::${ManagementAccountId}:ou/o-w4mbxaieqf/ou-jax6-6czoose2 #Canary CNS-GA
+                  - arn:aws:organizations::${ManagementAccountId}:ou/o-w4mbxaieqf/ou-jax6-v0p033cn #Canary CNS-GA/CLAB/Tenant
+                  - arn:aws:organizations::${ManagementAccountId}:ou/o-w4mbxaieqf/ou-jax6-0al9ndj2 #Canary CNS-GA/NONP/Tenant
+                  - arn:aws:organizations::${ManagementAccountId}:policy/o-w4mbxaieqf/service_control_policy/* # need this to attach policy to ou
                 Condition:
                   StringLikeIfExists:
                     organizations:PolicyType:
@@ -332,7 +330,7 @@ Resources:
                   - organizations:DeletePolicy
                 Effect: Allow
                 Resource:
-                  - arn:aws:organizations::606929559445:policy/o-w4mbxaieqf/service_control_policy/*
+                  - arn:aws:organizations::${ManagementAccountId}:policy/o-w4mbxaieqf/service_control_policy/*
                 Condition:
                   StringLikeIfExists:
                     organizations:PolicyType:
